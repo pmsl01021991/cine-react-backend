@@ -1,10 +1,11 @@
 // src/routes/reservas.js
 import express from "express";
-import sgMail from "@sendgrid/mail";
+import { Resend } from "resend";
 
 const router = express.Router();
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// 🔑 Resend usa la API Key desde Render
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 router.post("/enviar-voucher", async (req, res) => {
   try {
@@ -25,7 +26,7 @@ router.post("/enviar-voucher", async (req, res) => {
     }
 
     const html = `
-      <h2>Gracias por tu compra 🎉</h2>
+      <h2>🎟️ Voucher Cinerama</h2>
       <p><b>Cliente:</b> ${nombre_cliente}</p>
       <p><b>Cine:</b> ${cine}</p>
       <p><b>Película:</b> ${titulo}</p>
@@ -42,24 +43,17 @@ router.post("/enviar-voucher", async (req, res) => {
       <b>Cinerama</b>
     `;
 
-    await sgMail.send({
+    await resend.emails.send({
+      from: "Cinerama <onboarding@resend.dev>", // dominio de prueba de Resend
       to: correo_cliente,
-      from: "tucorreo_verificado@tudominio.com", // ⚠️ DEBE estar verificado en SendGrid
       subject: "🎟️ Tu voucher de compra - Cinerama",
       html,
     });
 
     res.json({ ok: true });
   } catch (error) {
-    console.error(
-      "❌ SENDGRID ERROR:",
-      error?.response?.body || error
-    );
-
-    res.status(500).json({
-      error: "Error enviando voucher",
-      details: error?.response?.body || null,
-    });
+    console.error("❌ RESEND ERROR:", error);
+    res.status(500).json({ error: "Error enviando voucher" });
   }
 });
 
