@@ -35,11 +35,6 @@ app.use(express.urlencoded({ extended: true }));
 const origin = process.env.ALLOWED_ORIGIN || "http://localhost:5173";
 app.use(cors({ origin }));
 
-app.use(express.static(FRONT_DIR));
-
-app.get("/", (_req, res) => {
-  res.sendFile(path.join(FRONT_DIR, "index.html"));
-});
 
 app.use("/api", rateLimit({ windowMs: 60_000, max: 60 }));
 
