@@ -9,6 +9,11 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 router.post("/enviar-voucher", async (req, res) => {
   try {
+    if (!process.env.RESEND_API_KEY) {
+      console.error("❌ RESEND_API_KEY NO DEFINIDA");
+      return res.status(500).json({ error: "Email service not configured" });
+    }
+
     const {
       nombre_cliente,
       correo_cliente,
@@ -22,7 +27,7 @@ router.post("/enviar-voucher", async (req, res) => {
     } = req.body;
 
     if (!correo_cliente) {
-      return res.status(400).json({ error: "Correo del cliente requerido" });
+      return res.status(400).json({ error: "Correo requerido" });
     }
 
     const html = `
@@ -33,28 +38,24 @@ router.post("/enviar-voucher", async (req, res) => {
       <p><b>Tipo:</b> ${tipoCine}</p>
       <p><b>Horario:</b> ${horario}</p>
       <p><b>Asientos:</b> ${asientos?.join(", ")}</p>
-      <p><b>Productos:</b> ${
-        productos && productos.length
-          ? productos.map(p => `${p.nombre} x${p.cantidad}`).join(", ")
-          : "No se compraron productos"
-      }</p>
-      <p><b>Total pagado:</b> S/ ${total_final}</p>
-      <hr/>
-      <b>Cinerama</b>
+      <p><b>Total:</b> S/ ${total_final}</p>
     `;
 
-    await resend.emails.send({
-      from: "Cinerama <onboarding@resend.dev>", // dominio de prueba de Resend
+    const result = await resend.emails.send({
+      from: "Cinerama <onboarding@resend.dev>",
       to: correo_cliente,
       subject: "🎟️ Tu voucher de compra - Cinerama",
       html,
     });
 
-    res.json({ ok: true });
+    console.log("✅ Email enviado:", result);
+
+    return res.json({ ok: true });
   } catch (error) {
-    console.error("❌ RESEND ERROR:", error);
-    res.status(500).json({ error: "Error enviando voucher" });
+    console.error("❌ ERROR RESEND:", error);
+    return res.status(500).json({ error: "Error enviando voucher" });
   }
 });
+
 
 export default router;
